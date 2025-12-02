@@ -127,35 +127,164 @@ def train_model(
     return model
 
 
-def evaluate_model(model, dataloader):
+import numpy as np
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    classification_report,
+    confusion_matrix,
+)
+
+
+def evaluate_model(
+    model,
+    dataloader,
+    criterion=None,
+    device=None,
+    average: str = "binary",
+    pos_label: int = 1,
+    print_report: bool = True,
+    threshold: float = 0.5,
+):
     """
-    Evaluate a PyTorch model on a given dataloader.
+    Evaluate a PyTorch classification model on a DataLoader.
 
     Parameters
     ----------
     model : torch.nn.Module
-        Trained model to evaluate.
+        Modèle déjà entraîné.
     dataloader : DataLoader
-        Dataloader for evaluation data.
+        Dataloader (val/test) sur lequel évaluer.
+    criterion : loss function ou None
+        Par ex. torch.nn.BCELoss, CrossEntropyLoss.
+        Si None, la loss n'est pas calculée.
+    device : torch.device, str ou None
+        "cuda", "cpu", etc. Si None, pas de .to(device).
+    average : str
+        'binary', 'macro', 'weighted', etc. pour precision/recall/F1.
+    pos_label : int
+        Classe positive pour le binaire (par ex. 1).
+    print_report : bool
+        Si True, affiche un classification_report et les métriques.
 
     Returns
     -------
-    all_outputs : torch.Tensor
-        Model outputs for all samples in the dataloader.
-    all_labels : torch.Tensor
-        True labels for all samples in the dataloader.
+    metrics : dict
+        Dict avec 'loss' (si criterion != None), 'accuracy', 'precision', 'recall', 'f1'.
     """
+
     model.eval()
-    all_outputs = []
+    if device is not None:
+        model.to(device)
+
     all_labels = []
+    all_preds = []
+    running_loss = 0.0
+    n_samples = 0
 
     with torch.no_grad():
         for inputs, labels in dataloader:
+            if device is not None:
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+
             outputs = model(inputs)
-            all_outputs.append(outputs)
-            all_labels.append(labels)
+            # ----- gestion de la loss -----
+            if criterion is not None:
+                loss = criterion(outputs, labels)
+                batch_size = labels.size(0)
+                running_loss += loss.item() * batch_size
+                n_samples += batch_size
 
-    all_outputs = torch.cat(all_outputs, dim=0)
-    all_labels = torch.cat(all_labels, dim=0)
+            # ----- prédiction (binaire ou multi-classes) -----
+            # Cas 1 : sortie (N, 1) → binaire (prob/logits)
+            if outputs.dim() == 2 and outputs.size(1) == 1:
+                # si le modèle ne contient pas déjà un sigmoid :
+                preds = (outputs >= threshold).long().view(-1)
+                labels_np = labels.view(-1).cpu().numpy()
 
-    return all_outputs, all_labels
+            # Cas 2 : sortie (N, C) → multi-classes
+            else:
+                preds = torch.argmax(outputs, dim=1)
+                labels_np = labels.cpu().numpy()
+
+            preds_np = preds.cpu().numpy()
+
+            all_labels.append(labels_np)
+            all_preds.append(preds_np)
+
+    # concaténer toutes les batches
+    all_labels = np.concatenate(all_labels)
+    all_preds = np.concatenate(all_preds)
+
+    metrics = {}
+
+    if criterion is not None and n_samples > 0:
+        metrics["loss"] = running_loss / n_samples
+
+    metrics["accuracy"] = accuracy_score(all_labels, all_preds)
+    metrics["precision"] = precision_score(
+        all_labels, all_preds, average=average, pos_label=pos_label
+    )
+    metrics["recall"] = recall_score(
+        all_labels, all_preds, average=average, pos_label=pos_label
+    )
+    metrics["f1"] = f1_score(
+        all_labels, all_preds, average=average, pos_label=pos_label
+    )
+
+    if print_report:
+        print("Classification report :")
+        print(classification_report(all_labels, all_preds))
+        print("Confusion matrix :")
+        print(confusion_matrix(all_labels, all_preds))
+        print("Metrics :")
+        for k, v in metrics.items():
+            print(f"  {k}: {v:.4f}")
+
+    return metrics
+
+threshold=[0.05+i*0.01 for i in range(30)]
+def grid_search_threshold(model, metrics="f1", threshold_list=threshold, dataloader=None, device=None):
+    """
+    Search for the best threshold to optimize a given metric.
+
+    Parameters
+    ----------
+    model : torch.nn.Module
+        Modèle déjà entraîné.
+    metrics : str
+        La métrique à optimiser ('accuracy', 'precision', 'recall', 'f1').
+    threshold_list : list of float
+        Liste des seuils à tester.
+    dataloader : DataLoader
+        Dataloader (val/test) sur lequel évaluer.
+    device : torch.device, str ou None
+        "cuda", "cpu", etc. Si None, pas de .to(device).
+
+    Returns
+    -------
+    best_threshold : float
+        Le seuil qui maximise la métrique spécifiée.
+    best_metric_value : float
+        La valeur maximale de la métrique obtenue.
+    """
+    best_threshold = None
+    best_metric_value = -float("inf")
+
+    for threshold in threshold_list:
+        eval_metrics = evaluate_model(
+            model,
+            dataloader,
+            device=device,
+            print_report=False,
+            threshold=threshold,
+        )
+        metric_value = eval_metrics[metrics]
+        if metric_value is not None and metric_value > best_metric_value:
+            best_metric_value = metric_value
+            best_threshold = threshold
+
+    return best_threshold, best_metric_value
