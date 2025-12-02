@@ -157,22 +157,22 @@ def evaluate_model(
         Modèle déjà entraîné.
     dataloader : DataLoader
         Dataloader (val/test) sur lequel évaluer.
-    criterion : loss function ou None
-        Par ex. torch.nn.BCELoss, CrossEntropyLoss.
-        Si None, la loss n'est pas calculée.
-    device : torch.device, str ou None
-        "cuda", "cpu", etc. Si None, pas de .to(device).
+    criterion : loss function or None
+        For example, torch.nn.BCELoss, CrossEntropyLoss.
+        If None, the loss is not calculated.
+    device : torch.device, str or None
+        "cuda", "cpu", etc. If None, no .to(device).
     average : str
-        'binary', 'macro', 'weighted', etc. pour precision/recall/F1.
+        'binary', 'macro', 'weighted', etc. for precision/recall/F1.
     pos_label : int
-        Classe positive pour le binaire (par ex. 1).
+        Positive class for binary (e.g. 1).
     print_report : bool
-        Si True, affiche un classification_report et les métriques.
+        If True, prints a classification_report and the metrics.
 
     Returns
     -------
     metrics : dict
-        Dict avec 'loss' (si criterion != None), 'accuracy', 'precision', 'recall', 'f1'.
+        Dict with 'loss' (if criterion != None), 'accuracy', 'precision', 'recall', 'f1'.
     """
 
     model.eval()
@@ -254,22 +254,22 @@ def grid_search_threshold(model, metrics="f1", threshold_list=threshold, dataloa
     Parameters
     ----------
     model : torch.nn.Module
-        Modèle déjà entraîné.
+        model 
     metrics : str
-        La métrique à optimiser ('accuracy', 'precision', 'recall', 'f1').
+        Metric to optimize ('accuracy', 'precision', 'recall', 'f1').
     threshold_list : list of float
-        Liste des seuils à tester.
+        List of thresholds to test.
     dataloader : DataLoader
-        Dataloader (val/test) sur lequel évaluer.
-    device : torch.device, str ou None
-        "cuda", "cpu", etc. Si None, pas de .to(device).
+        Dataloader (val/test) on which to evaluate.
+    device : torch.device, str or None
+        "cuda", "cpu", etc. If None, no .to(device).
 
     Returns
     -------
     best_threshold : float
-        Le seuil qui maximise la métrique spécifiée.
+        The threshold that maximizes the specified metric.
     best_metric_value : float
-        La valeur maximale de la métrique obtenue.
+        The maximum value of the metric obtained.
     """
     best_threshold = None
     best_metric_value = -float("inf")
