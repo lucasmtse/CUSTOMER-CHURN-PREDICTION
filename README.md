@@ -1,88 +1,126 @@
-# 🛒 Customer Re-Purchase / Churn Prediction
+# 🛒 Customer Re-Purchase Prediction  
+Predicting if a customer will buy again the following month
 
-This repository contains notebooks and supporting code to predict whether a customer will repurchase (or churn) in the next month. The notebooks cover data cleaning, feature engineering, model training, evaluation and a small PyTorch model implementation.
+This repository contains two Jupyter notebooks that form a complete pipeline to predict whether a customer will make a repeat purchase in the next month.  
+The project includes **data cleaning**, **feature engineering**, **aggregation**, **model evaluation**, and **machine learning experimentation**.
 
 ---
 
-## 📁 Real project structure
+## 📁 Project Structure
+```
+--------------------
 
-Below is the actual repository layout (root = project folder):
+📂 Customer-Rebuy-Prediction
+│
+├── Notebook_data_cleaning.ipynb
+│      → Data cleaning, preprocessing, feature engineering, customer aggregation
+│
+├── Notebook_prediction.ipynb
+│      → Testing of ML models, evaluation, visualizations
+│
+├── models/
+│      ├── models.py
+│      │     → Training functions for:
+│      │           - Ensemble models (Random Forest)
+│      │           - XGBoost
+│      │           - Logistic Regression
+│      │
+│      └── MLP.py
+│            → PyTorch nn.Module class + training
+│
+├── utils/
+│      └── evaluation.py
+│            → Evaluation utilities:
+│                  - Confusion matrix
+│                  - ROC / AUC
+│                  - Precision, Recall, F1-score
+│                  - Probability & threshold analysis
+│
+└── README.md
+       → Documentation of the full project
 
 ```
-Notebook_data_cleaning.ipynb        # Data cleaning & feature engineering notebook
-Notebook_prediction.ipynb          # Model training, evaluation & experiments
-README.md                          # This documentation file
+---
 
-models/                             # Model code and checkpoints
-  ├─ __init__.py                    # package init
-  ├─ MLP.py                         # PyTorch MLP model implementation
-  ├─ model.py                       # higher-level model utilities / wrappers
-  └─ checkpoint/
-      └─ best_model.pt              # saved model weights (binary)
+## 1️⃣ Notebook: Data Cleaning & Feature Engineering  
+**File:** `Notebook_data_cleaning.ipynb`
 
-utils/                              # helper utilities
-  ├─ __init__.py
-  └─ evaluation.py                  # evaluation metrics and helper functions
+This notebook focuses on building a **clean, consistent, and machine-learning-ready dataset**.
 
-```
+### 🔧 Main steps:
+- **Data Import & Inspection**
+  - Exploration of raw transactional data  
+  - Detection of missing values, duplicate rows, inconsistent entries
 
-Notes:
-- The `models/checkpoint/best_model.pt` is a saved PyTorch model (binary) used for quick inference or to resume training.
-- The notebooks are the primary entry points for exploration and running experiments.
+- **Data Cleaning**
+  - Handling missing dates and extreme values  
+  - Standardizing formats (dates, integers, categorical fields)
+
+- **Feature Engineering**
+  - Creation of customer-level metrics such as:
+    - Number of visits during previous months
+    - RFM indicator (Recence, Frequency, Monetary)
+    - Total and average spend  
+    - Monthly activity profile  
+
+- **Aggregation**
+  - Grouping data by customer ID to build a single row per customer 
+  - Grouping data by customoer ID and Month (+Year) to create features about monthly behavior
+  - Combining transactional history into meaningful features
+
+- **Final Dataset Export**
+  - Saving the cleaned dataset for modeling in the following notebook !  :D
 
 ---
 
-## Brief file/folder descriptions
+## 2️⃣ Notebook: Model Training & Prediction  
+**File:** `Notebook_prediction.ipynb`
 
-- `Notebook_data_cleaning.ipynb` — Clean raw data, feature engineering, and produce the final dataset used for modeling. Contains steps for handling missing values, normalization, aggregation to customer-level features, and creation of the target label.
+This notebook evaluates several machine learning models to classify whether a customer will re-purchase next month.
 
-- `Notebook_prediction.ipynb` — Load the prepared dataset, train models (baseline models and the MLP in `models/`), tune hyperparameters, and evaluate performance. Contains visualization of results and comparison tables.
+### 🤖 Models Tested
+- **Logistic Regression**
+- **Random Forest**
+- **XGBoost**
+- **Simple Neural Network (PyTorch / TensorFlow depending on setup)**
+- Additional experiments on thresholds, scaling, and dealing with class imbalance
 
-- `models/MLP.py` — Implementation of a simple feed-forward neural network (PyTorch) used as one of the models.
+### 📊 Evaluation & Metrics
+- Train/validation/test split  
+- Performance metrics:
+  - Accuracy  
+  - Precision / Recall  
+  - F1-score  
+  - Confusion matrix  
+- Analysis of **false negatives** (customers predicted as non-rebuyers but actually rebuy)
 
-- `models/model.py` — Utilities for training, saving, loading models, and possibly wrappers that orchestrate training loops.
-
-- `models/checkpoint/best_model.pt` — Best model checkpoint produced by prior training runs. Binary file, not human-readable.
-
-- `utils/evaluation.py` — Functions to compute metrics (accuracy, precision, recall, F1, confusion matrix) and helper code to format results.
-
----
-
-## Quick start
-
-1. Install recommended packages (example):
-
-```powershell
-python -m pip install -r requirements.txt  # if you create one, or install manually
-```
-
-At minimum: pandas, numpy, scikit-learn, matplotlib, torch (PyTorch).
-
-2. Open `Notebook_data_cleaning.ipynb` in Jupyter/VS Code to prepare the dataset.
-
-3. Open `Notebook_prediction.ipynb` to run model training and evaluation. The notebook references `models/` and `utils/`.
+### 🚀 Model Selection
+Comparison of multiple models to select the best one for production usage.
 
 ---
 
-## Verification
-
-To verify the structure locally, run (from project root):
-
-```powershell
-# show tree on Windows PowerShell
-Get-ChildItem -Recurse -Force | Format-List FullName
-```
-
-Or manually inspect the folders in your editor.
+## 🧠 Goal of the Project  
+The goal is to help marketing teams identify **which customers are likely to repurchase next month**, allowing actions such as:
+- Retargeting
+- Personalized campaigns
+- Incentives for likely churners
 
 ---
 
-## Author
+## 📌 Requirements
+Recommended environment:
+- Python 3.10+
+- pandas  
+- numpy  
+- scikit-learn  
+- xgboost  
+- matplotlib
+- PyTorch
 
-Project developed by Lucas.
+# 📝 Author
 
----
+Project developed by Lucas MIedzyrzecki.
 
-If you want, I can also:
-- Add a minimal `requirements.txt` based on imports found in the notebooks and scripts.
-- Add a brief CONTRIBUTING or USAGE section showing exact notebook cells to run.
+# 📄 License
+
+This project is open-source. Feel free to reuse and adapt the code. The dataset is not included due to confidentiality agreements.
